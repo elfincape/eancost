@@ -50,7 +50,7 @@ NEXT_PUBLIC_APP_URL=
 
 ## 현재 구현 단계
 
-현재 코드는 단계형 개발 계획 중 **6단계: 센터별 BI 대시보드**까지 구현되어 있습니다. `/upload` 화면에서 .xlsx 파일을 선택하면 SheetJS 기반 파서가 브라우저에서 시트 목록과 미리보기 테이블을 표시하고, 파싱 결과를 localStorage에 임시 저장합니다. `/settings/vehicles`에서 고정차량 목록을 등록하면 `/settlements`에서 전체/고정차/임시차 탭으로 분류 결과를 확인할 수 있습니다. `/settlements/convert`에서는 고정차만 추출해 표준 컬럼 매핑 후 붙여넣기용 테이블/클립보드 복사/xlsx 다운로드를 제공합니다. `/settlements/compare`에서는 청구자료와 지급자료를 각각 업로드해 차량번호 기준 누락, 금액 차이, 중복 데이터를 검증하고 결과 xlsx를 다운로드할 수 있습니다. `/reports`에서는 마지막 업로드/파싱 데이터를 기반으로 센터별 카드, 청구/지급 막대차트, 주차별 추이 라인차트, 고정차/임시차 도넛차트를 제공합니다. 아직 DB 저장과 위클리 리포트 생성은 수행하지 않습니다.
+현재 코드는 단계형 개발 계획 중 **7단계: 위클리 리포트**까지 구현되어 있습니다. `/upload` 화면에서 .xlsx 파일을 선택하면 SheetJS 기반 파서가 브라우저에서 시트 목록과 미리보기 테이블을 표시하고, 파싱 결과를 localStorage에 임시 저장합니다. `/settings/vehicles`에서 고정차량 목록을 등록하면 `/settlements`에서 전체/고정차/임시차 탭으로 분류 결과를 확인할 수 있습니다. `/settlements/convert`에서는 고정차만 추출해 표준 컬럼 매핑 후 붙여넣기용 테이블/클립보드 복사/xlsx 다운로드를 제공합니다. `/settlements/compare`에서는 청구자료와 지급자료를 각각 업로드해 차량번호 기준 누락, 금액 차이, 중복 데이터를 검증하고 결과 xlsx를 다운로드할 수 있습니다. `/reports`에서는 센터별 BI 대시보드를 제공하고, `/reports/weekly`에서는 기준 주차와 센터를 선택해 보고용 문장, 이상 데이터 요약, 누락/중복 차량 목록, 복사, xlsx 다운로드를 제공합니다. 아직 DB 저장은 수행하지 않습니다.
 
 ## Supabase SQL 적용 방법
 
@@ -111,6 +111,7 @@ where email = 'admin@example.com';
 ```text
 app/                         Next.js App Router 페이지
 lib/settlements/             정산자료 변환/비교 유틸리티
+lib/reports/                 BI/위클리 리포트 집계 유틸리티
 components/                  공통 UI 컴포넌트
 lib/supabase/client.ts       브라우저용 Supabase 클라이언트
 lib/supabase/server.ts       서버/Route Handler용 Supabase 클라이언트
@@ -121,12 +122,8 @@ supabase/seed.sql            초기 센터 seed SQL
 
 ## 다음 개발 단계 제안
 
-1. **7단계: 위클리 리포트**
-   - 기준 주차/센터 선택
-   - 센터별 청구/지급/차이금액, 이상 데이터 요약
-   - 보고용 문장 자동 생성, 복사, xlsx 다운로드
-2. **8~9단계: 저장 구조와 권한**
+1. **8~9단계: 저장 구조와 권한**
    - 이미 준비된 Supabase 스키마를 실제 CRUD/API에 연결
    - 로그인과 admin/user 권한을 UI와 서버 로직에 적용
-3. **10단계: 품질 개선**
+2. **10단계: 품질 개선**
    - 에러/빈 상태/로딩/검색/필터/도움말/타입 안정성 정리

@@ -14,6 +14,7 @@ const navigation = [
   { href: "/settlements/convert", label: "정산 변환" },
   { href: "/settlements/compare", label: "청구/지급 비교" },
   { href: "/reports", label: "리포트" },
+  { href: "/reports/weekly", label: "위클리 리포트" },
   { href: "/settings/vehicles", label: "차량 관리" },
   { href: "/settings/centers", label: "센터 관리" },
 ];
