@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { parseExcelWorkbook } from "@/lib/excel/parse-workbook";
+import { saveLatestWorkbook } from "@/lib/vehicles/storage";
 import type { ParsedExcelSheet, ParsedExcelWorkbook, SettlementFileType } from "@/lib/excel/types";
 
 function formatBytes(bytes: number) {
@@ -93,6 +94,7 @@ export function UploadClient() {
 
     try {
       const parsed = await parseExcelWorkbook(file, fileType);
+      saveLatestWorkbook(parsed);
       setWorkbook(parsed);
       setActiveSheetName(parsed.sheets[0]?.sheetName ?? "");
     } catch (error) {
@@ -110,7 +112,7 @@ export function UploadClient() {
         <div>
           <h2 className="text-xl font-bold text-slate-950">파일 선택</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            이번 단계는 DB 저장 없이 브라우저에서 엑셀을 읽고 시트별 원본 데이터를 확인하는 기능만 제공합니다.
+            이번 단계는 DB 저장 없이 브라우저에서 엑셀을 읽고 시트별 원본 데이터를 확인합니다. 파싱 결과는 고정차 필터링을 위해 localStorage에 임시 보관됩니다.
           </p>
         </div>
 
