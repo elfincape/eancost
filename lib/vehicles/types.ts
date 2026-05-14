@@ -1,3 +1,5 @@
+import type { ExcelPreviewRow } from "@/lib/excel/types";
+
 export type VehicleType = "fixed" | "temporary";
 
 export type FixedVehicle = {
@@ -17,5 +19,5 @@ export type ClassifiedSettlementRow = {
   centerName?: string;
   vehicleType: VehicleType;
   matchedVehicle?: FixedVehicle;
-  data: Record<string, unknown>;
+  data: ExcelPreviewRow;
 };

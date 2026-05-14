@@ -11,6 +11,7 @@ const navigation = [
   { href: "/", label: "대시보드" },
   { href: "/upload", label: "엑셀 업로드" },
   { href: "/settlements", label: "정산자료" },
+  { href: "/settlements/convert", label: "정산 변환" },
   { href: "/settlements/compare", label: "청구/지급 비교" },
   { href: "/reports", label: "리포트" },
   { href: "/settings/vehicles", label: "차량 관리" },
