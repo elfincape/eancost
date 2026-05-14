@@ -50,7 +50,7 @@ NEXT_PUBLIC_APP_URL=
 
 ## 현재 구현 단계
 
-현재 코드는 단계형 개발 계획 중 **7단계: 위클리 리포트**까지 구현되어 있습니다. `/upload` 화면에서 .xlsx 파일을 선택하면 SheetJS 기반 파서가 브라우저에서 시트 목록과 미리보기 테이블을 표시하고, 파싱 결과를 localStorage에 임시 저장합니다. `/settings/vehicles`에서 고정차량 목록을 등록하면 `/settlements`에서 전체/고정차/임시차 탭으로 분류 결과를 확인할 수 있습니다. `/settlements/convert`에서는 고정차만 추출해 표준 컬럼 매핑 후 붙여넣기용 테이블/클립보드 복사/xlsx 다운로드를 제공합니다. `/settlements/compare`에서는 청구자료와 지급자료를 각각 업로드해 차량번호 기준 누락, 금액 차이, 중복 데이터를 검증하고 결과 xlsx를 다운로드할 수 있습니다. `/reports`에서는 센터별 BI 대시보드를 제공하고, `/reports/weekly`에서는 기준 주차와 센터를 선택해 보고용 문장, 이상 데이터 요약, 누락/중복 차량 목록, 복사, xlsx 다운로드를 제공합니다. 아직 DB 저장은 수행하지 않습니다.
+현재 코드는 단계형 개발 계획 중 **8단계: 데이터 저장 구조 도입**까지 구현되어 있습니다. `/upload` 화면에서 .xlsx 파일을 선택하면 SheetJS 기반 파서가 브라우저에서 시트 목록과 미리보기 테이블을 표시하고, 파싱 결과를 localStorage에 임시 저장합니다. `/settings/vehicles`에서 고정차량 목록을 등록하면 `/settlements`에서 전체/고정차/임시차 탭으로 분류 결과를 확인할 수 있습니다. `/settlements/convert`에서는 고정차만 추출해 표준 컬럼 매핑 후 붙여넣기용 테이블/클립보드 복사/xlsx 다운로드를 제공합니다. `/settlements/compare`에서는 청구자료와 지급자료를 각각 업로드해 차량번호 기준 누락, 금액 차이, 중복 데이터를 검증하고 결과 xlsx를 다운로드할 수 있습니다. `/reports`와 `/reports/weekly`에서는 BI/위클리 리포트를 제공합니다. Supabase 저장 확장을 위해 `converted_settlement_rows` 마이그레이션과 서버 전용 storage API를 추가했으며, UI는 아직 localStorage fallback을 유지합니다.
 
 ## Supabase SQL 적용 방법
 
@@ -106,12 +106,46 @@ where email = 'admin@example.com';
 - 민감 테이블은 RLS 정책 없이 공개하지 마세요.
 - `lib/supabase/admin.ts`는 서버 전용 작업에서만 사용하세요.
 
+## 데이터 저장 구조
+
+8단계부터 Supabase 저장 구조를 확장했습니다. 기존 localStorage 화면은 오프라인/초기 검증 fallback으로 유지하며, 서버 저장은 `/api/storage/[table]` API를 통해 단계적으로 연결할 수 있습니다.
+
+지원 테이블:
+
+- `centers`
+- `drivers`
+- `vehicles`
+- `uploaded_files`
+- `settlement_batches`
+- `settlement_rows`
+- `converted_settlement_rows`
+- `comparison_results`
+
+API 예시:
+
+```bash
+# 목록 조회
+curl /api/storage/vehicles
+
+# 생성
+curl -X POST /api/storage/vehicles -H 'Content-Type: application/json' -d '{"vehicle_number":"12가3456","vehicle_type":"fixed","center_id":"..."}'
+
+# 수정
+curl -X PATCH /api/storage/vehicles/{id} -H 'Content-Type: application/json' -d '{"memo":"updated"}'
+
+# 삭제
+curl -X DELETE /api/storage/vehicles/{id}
+```
+
+이 API는 `SUPABASE_SERVICE_ROLE_KEY`를 사용하는 서버 전용 API입니다. 브라우저에는 service role key를 노출하지 마세요. 인증/권한 UI는 9단계에서 연결합니다.
+
 ## 프로젝트 구조
 
 ```text
 app/                         Next.js App Router 페이지
 lib/settlements/             정산자료 변환/비교 유틸리티
 lib/reports/                 BI/위클리 리포트 집계 유틸리티
+lib/storage/                 Supabase storage API table whitelist
 components/                  공통 UI 컴포넌트
 lib/supabase/client.ts       브라우저용 Supabase 클라이언트
 lib/supabase/server.ts       서버/Route Handler용 Supabase 클라이언트
@@ -122,8 +156,9 @@ supabase/seed.sql            초기 센터 seed SQL
 
 ## 다음 개발 단계 제안
 
-1. **8~9단계: 저장 구조와 권한**
-   - 이미 준비된 Supabase 스키마를 실제 CRUD/API에 연결
-   - 로그인과 admin/user 권한을 UI와 서버 로직에 적용
+1. **9단계: 권한/관리자 기능**
+   - Supabase Auth 로그인 추가
+   - admin/user 권한을 UI와 서버 API에 적용
+   - 관리자 전용 차량/센터/기준정보 수정 메뉴 정리
 2. **10단계: 품질 개선**
    - 에러/빈 상태/로딩/검색/필터/도움말/타입 안정성 정리

@@ -1,5 +1,5 @@
 import type { ExcelCellValue, ExcelPreviewRow, ParsedExcelWorkbook } from "@/lib/excel/types";
-import { normalizeVehicleNumber } from "@/lib/vehicles/classify";
+import { isSummaryRow, isValidVehicleNumber, normalizeVehicleNumber } from "@/lib/vehicles/classify";
 import type { ColumnMapping } from "./convert";
 
 export type SettlementCompareSource = "billing" | "payment";
@@ -108,24 +108,27 @@ export function extractComparableRows(
   const targetSheets = sheetName === "__all__" ? workbook.sheets : workbook.sheets.filter((sheet) => sheet.sheetName === sheetName);
 
   return targetSheets.flatMap((sheet) =>
-    sheet.rows.map((row, rowIndex) => {
-      const vehicleNumber = formatVehicleNumber(getMappedValue(row, mapping.vehicleNumber));
-      const rawAmount = getMappedValue(row, amountColumn);
+    sheet.rows
+      .filter((row) => !isSummaryRow(row))
+      .map((row, rowIndex) => {
+        const vehicleNumber = formatVehicleNumber(getMappedValue(row, mapping.vehicleNumber));
+        const rawAmount = getMappedValue(row, amountColumn);
 
-      return {
-        id: `${source}-${sheet.sheetName}-${rowIndex}`,
-        source,
-        sheetName: sheet.sheetName,
-        rowIndex: rowIndex + 1,
-        vehicleNumber,
-        normalizedVehicleNumber: normalizeVehicleNumber(vehicleNumber),
-        driverName: formatVehicleNumber(getMappedValue(row, mapping.driverName)) || undefined,
-        centerName: formatVehicleNumber(getMappedValue(row, mapping.centerName)) || undefined,
-        amount: parseAmount(rawAmount),
-        rawAmount,
-        rawData: row,
-      } satisfies NormalizedSettlementRow;
-    }),
+        return {
+          id: `${source}-${sheet.sheetName}-${rowIndex}`,
+          source,
+          sheetName: sheet.sheetName,
+          rowIndex: rowIndex + 1,
+          vehicleNumber,
+          normalizedVehicleNumber: normalizeVehicleNumber(vehicleNumber),
+          driverName: formatVehicleNumber(getMappedValue(row, mapping.driverName)) || undefined,
+          centerName: formatVehicleNumber(getMappedValue(row, mapping.centerName)) || undefined,
+          amount: parseAmount(rawAmount),
+          rawAmount,
+          rawData: row,
+        } satisfies NormalizedSettlementRow;
+      })
+      .filter((row) => isValidVehicleNumber(row.vehicleNumber)),
   );
 }
 

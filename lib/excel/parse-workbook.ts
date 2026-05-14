@@ -36,6 +36,42 @@ function normalizeHeader(row: ExcelCellValue[]) {
   });
 }
 
+function getCellValue(cell: XLSX.CellObject | undefined): ExcelCellValue {
+  if (!cell) return null;
+
+  // Formula cells can expose both `f` (formula text) and cached values (`v`/`w`).
+  // Prefer cached/display values so settlement amount columns do not become formula strings.
+  if (cell.w !== undefined && cell.w !== null && String(cell.w).trim() !== "") {
+    return cell.w;
+  }
+
+  if (cell.v instanceof Date) return cell.v;
+  if (typeof cell.v === "string" || typeof cell.v === "number" || typeof cell.v === "boolean") return cell.v;
+
+  return null;
+}
+
+function worksheetToMatrix(worksheet: XLSX.WorkSheet): ExcelCellValue[][] {
+  const rangeRef = worksheet["!ref"];
+  if (!rangeRef) return [];
+
+  const range = XLSX.utils.decode_range(rangeRef);
+  const rows: ExcelCellValue[][] = [];
+
+  for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+    const row: ExcelCellValue[] = [];
+
+    for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+      const address = XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex });
+      row.push(getCellValue(worksheet[address]));
+    }
+
+    rows.push(row);
+  }
+
+  return rows;
+}
+
 function normalizeRows(matrix: ExcelCellValue[][]) {
   const firstDataRowIndex = matrix.findIndex((row) => !isEmptyRow(row));
 
@@ -74,16 +110,12 @@ export async function parseExcelWorkbook(file: File, fileType: SettlementFileTyp
     type: "array",
     cellDates: true,
     dense: false,
+    cellFormula: false,
   });
 
   const sheets: ParsedExcelSheet[] = workbook.SheetNames.map((sheetName) => {
     const worksheet = workbook.Sheets[sheetName];
-    const rawRows = XLSX.utils.sheet_to_json<ExcelCellValue[]>(worksheet, {
-      header: 1,
-      blankrows: false,
-      defval: null,
-      raw: false,
-    });
+    const rawRows = worksheetToMatrix(worksheet);
     const { columns, rows } = normalizeRows(rawRows);
 
     return {
